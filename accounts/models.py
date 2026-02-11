@@ -19,8 +19,9 @@ class CustomUser(AbstractUser):
     department = models.ForeignKey(
         Department,
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        null=True,          # still allow NULL for old rows
+        blank=False,        # required in forms
+        default=1,          # ← default to department with ID=1 (Planning)
         related_name='employees'
     )
     phone = models.CharField(max_length=20, blank=True)
