@@ -4,7 +4,7 @@ from .models import Task
 def create_task(validated_data, user):
     "business rules + workflow"
     "# Example cross-module check (could call accounts service)"
-    if user.groups.filter(name__in=['admin', 'manager']).exists():
+    if user.groups.filter(name__in=['admin', 'manager', 'ie_engineer']).exists():
         task =Task.objects.create(**validated_data, owner=user)
         # e.g. send notification, log audit, etc.
         return task
