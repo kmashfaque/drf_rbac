@@ -80,7 +80,7 @@ class TaskDetailAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        obj.completed = request.data.get('completed', obj.completed) # in this line .get is the Pythons 
+        obj.completed = request.data.get('completed', obj.completed) # in this line (.get) is the Pythons 
         #dictionary, it checks the key called 'completed' if any value means "completed: True" is given 
         # it will take that value, If no value is given then it will retain its old value in obj.completed
         
