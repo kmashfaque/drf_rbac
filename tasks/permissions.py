@@ -30,7 +30,7 @@ class CanMarkCompleted(BasePermission):
     - production_operator
     - planning_head
     """
-    allowed_groups = ['quality_inspector', 'production_operator', 'planning_head']
+    allowed_groups = ['quality_inspector', 'production_operator', 'planning head']
 
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -53,7 +53,7 @@ class CanManageTask(BasePermission):
     - cutting_supervisor
     - sewing_supervisor
     """
-    allowed_groups = ['planning_head', 'cutting_supervisor', 'sewing_supervisor',"ie_engineer"]
+    allowed_groups = ['planning head', 'cutting_supervisor', 'sewing_supervisor',"ie_engineer"]
 
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
