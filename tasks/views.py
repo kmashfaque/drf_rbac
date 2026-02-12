@@ -7,7 +7,7 @@ from .permissions import CanViewTask, CanMarkCompleted, CanManageTask, IsAdminOr
 from .serializers import TaskInputSerialier, TaskOutputSerializer
 from .services import create_task, get_user_tasks
 from .models import Task
-from accounts.permissions import IsManagerOrAdmin  # if you still use it
+from accounts.permissions import IsManagerOrAdmin  
 
 class TaskListAPIView(APIView):
     """
@@ -42,11 +42,24 @@ class TaskDetailAPIView(APIView):
     """
     permission_classes = [IsAuthenticated, CanViewTask]
 
+    # get_object is a helper function 
+    # its job is to find one task from database using Primary Key(PK) 
+    # if the tasks exists then it will retur the object
+    # if not then it returns niothing
+    # it makes code easier and help to prevent repeatative coding
+
     def get_object(self, pk):
         try:
             return Task.objects.get(pk=pk)
         except Task.DoesNotExist:
             return None
+
+    # this is the original method for Django Rest Framework, 
+    # it automatically calls when someone sends a get request to /api/tasks/<pk>/
+    #it does three things 
+    # 1) Calls helper function
+    # 2) If no tasks found Returns 404 not found
+    # 3) if task found convert it to JSON (TaskOutputSerailizer) and sends it back
 
     def get(self, request, pk):
         obj = self.get_object(pk)
@@ -67,7 +80,10 @@ class TaskDetailAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        obj.completed = request.data.get('completed', obj.completed)
+        obj.completed = request.data.get('completed', obj.completed) # in this line .get is the Pythons 
+        #dictionary, it checks the key called 'completed' if any value means "completed: True" is given 
+        # it will take that value, If no value is given then it will retain its old value in obj.completed
+        
         obj.save(update_fields=['completed'])
         return Response(TaskOutputSerializer(obj).data)
 
