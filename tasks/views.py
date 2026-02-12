@@ -3,7 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .permissions import CanViewTask, CanMarkCompleted, CanManageTask, IsAdminOrOwner
+from .permissions import IsTaskOwner, CanMarkCompleted, CanManageTask, IsAdminOrOwner
 from .serializers import TaskInputSerialier, TaskOutputSerializer
 from .services import create_task, get_user_tasks
 from .models import Task
@@ -13,13 +13,24 @@ class TaskListAPIView(APIView):
     """
     List all tasks (filtered by user permissions) or create new task.
     """
-    permission_classes = [IsAuthenticated, CanViewTask]
+    permission_classes = [IsAuthenticated, IsTaskOwner]
+
+    def get_queryset(self):
+        """
+        Filter tasks: 
+        - Superuser sees everything
+        - Normal user sees only their own tasks
+        """
+        if self.request.user.is_superuser:
+            return Task.objects.all()
+        return Task.objects.filter(owner=self.request.user)
 
     def get(self, request):
-        tasks = get_user_tasks(request.user)
+        tasks = self.get_queryset()
         serializer = TaskOutputSerializer(tasks, many=True)
         return Response(serializer.data)
-
+    
+    
     def post(self, request):
         # Only certain roles can create tasks
         if not CanManageTask().has_permission(request, self):
@@ -40,8 +51,7 @@ class TaskDetailAPIView(APIView):
     """
     Retrieve, update (mark completed), or delete a task.
     """
-    permission_classes = [IsAuthenticated, CanViewTask]
-
+    permission_classes = [IsAuthenticated, IsTaskOwner]
     # get_object is a helper function 
     # its job is to find one task from database using Primary Key(PK) 
     # if the tasks exists then it will retur the object
@@ -54,6 +64,7 @@ class TaskDetailAPIView(APIView):
         except Task.DoesNotExist:
             return None
 
+        
     # this is the original method for Django Rest Framework, 
     # it automatically calls when someone sends a get request to /api/tasks/<pk>/
     #it does three things 
@@ -65,13 +76,17 @@ class TaskDetailAPIView(APIView):
         obj = self.get_object(pk)
         if not obj:
             return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        self.check_object_permissions(request, obj)
         serializer = TaskOutputSerializer(obj)
         return Response(serializer.data)
 
     def patch(self, request, pk):
         obj = self.get_object(pk)
-        if not obj:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        # if not obj:
+        #     return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        self.check_object_permissions(request, obj)
 
         # Only allow marking as completed if permitted
         if not CanMarkCompleted().has_object_permission(request, self, obj):
@@ -91,6 +106,8 @@ class TaskDetailAPIView(APIView):
         obj = self.get_object(pk)
         if not obj:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        self.check_object_permissions(request, obj)
 
         # Only managers can delete
         if not CanManageTask().has_permission(request, self):
